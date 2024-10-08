@@ -80,22 +80,50 @@
     <script>
         const socket = io();
         let username = '';
-        let songQueue = [];
-        let player;
+        const songQueue = [];
 
         // Inisialisasi YouTube Player API
+        let player;
+        let currentSong = '';
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 height: '0',
                 width: '0',
                 events: {
                     'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
                 }
             });
         }
 
         function onPlayerReady(event) {
-            console.log('YouTube Player is ready');
+            event.target.playVideo();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                socket.emit('nextSong'); // Minta server untuk memulai lagu berikutnya
+            }
+        }
+
+        function playNextSong(songTitle) {
+            searchYouTubeAndPlay(songTitle);
+        }
+
+        function searchYouTubeAndPlay(songTitle) {
+            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U';
+            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
+
+            fetch(searchUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const videoId = data.items[0].id.videoId;
+                    currentSong = songTitle;
+                    player.loadVideoById(videoId);
+                    player.playVideo();
+                })
+                .catch(error => console.error('Error fetching YouTube video:', error));
         }
 
         // Fungsi untuk memulai chat
@@ -127,6 +155,7 @@
             if (msg.trim() !== '') {
                 if (msg.startsWith('req ')) {
                     const songRequest = msg.slice(4);
+                    songQueue.push(songRequest);
                     socket.emit('songRequest', { name: username, song: songRequest });
                 } else {
                     socket.emit('message', { name: username, message: msg });
@@ -135,6 +164,7 @@
             }
         }
 
+        // Menerima history pesan dari server
         socket.on('history', (history) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = '';
@@ -146,6 +176,7 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
+        // Menerima pesan dari server
         socket.on('message', (data) => {
             const div = document.createElement('div');
             div.innerHTML = `${data.name}: ${data.message}`;
@@ -154,38 +185,31 @@
             messages.scrollTop = messages.scrollHeight;
         });
 
+        // Update antrian lagu
         socket.on('queueUpdate', (updatedQueue) => {
-            songQueue = updatedQueue;
-            updateQueueList();
-        });
-
-        socket.on('playSong', (songTitle) => {
-            searchYouTubeAndPlay(songTitle);
-        });
-
-        function searchYouTubeAndPlay(songTitle) {
-            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U';
-            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
-
-            fetch(searchUrl)
-                .then(response => response.json())
-                .then(data => {
-                    const videoId = data.items[0].id.videoId;
-                    player.loadVideoById(videoId);
-                    player.playVideo();
-                })
-                .catch(error => console.error('Error fetching YouTube video:', error));
-        }
-
-        function updateQueueList() {
             const queueList = document.getElementById('queueList');
-            queueList.innerHTML = '';
-            songQueue.forEach(song => {
-                const div = document.createElement('div');
-                div.innerHTML = song;
-                queueList.appendChild(div);
+            queueList.innerHTML = '';  // Hapus antrian lama
+            updatedQueue.forEach(song => {
+                const songDiv = document.createElement('div');
+                songDiv.className = 'song-request';
+                songDiv.innerHTML = `<strong>${song}</strong>`;
+                queueList.appendChild(songDiv);
             });
-        }
+        });
+
+        // Menerima permintaan lagu dan memulai pemutaran
+        socket.on('songRequest', (data) => {
+            const queueList = document.getElementById('queueList');
+            const songDiv = document.createElement('div');
+            songDiv.className = 'song-request';
+            songDiv.innerHTML = `<strong>${data.song}</strong>`;
+            queueList.appendChild(songDiv);
+        });
+
+        // Mainkan lagu berikutnya saat lagu saat ini selesai
+        socket.on('playNextSong', (nextSong) => {
+            playNextSong(nextSong);
+        });
     </script>
 </body>
 </html>

@@ -8,26 +8,34 @@ const io = socketIo(server);
 
 app.use(express.static('public')); // Menyajikan file statis dari folder 'public'
 
-let songQueue = [];  // Global song queue
-let isPlaying = false;
+let songQueue = [];  // Menyimpan antrian lagu
 
 io.on('connection', (socket) => {
     console.log('User connected');
 
-    // Kirim antrian lagu saat user pertama kali terkoneksi
+    // Mengirimkan antrian lagu ketika ada user baru bergabung
     socket.emit('queueUpdate', songQueue);
 
-    // Saat pesan diterima dari klien
+    // Saat menerima pesan dari klien
     socket.on('message', (data) => {
-        io.emit('message', data); // Kirim pesan kembali ke semua pengguna
+        io.emit('message', data); // Mengirim pesan ke semua pengguna
     });
 
     // Saat ada permintaan lagu
     socket.on('songRequest', (data) => {
-        songQueue.push(data.song); // Tambahkan lagu ke antrian
-        io.emit('queueUpdate', songQueue); // Broadcast antrian lagu terbaru ke semua klien
-        if (!isPlaying) {
-            playNextSong(io);
+        songQueue.push(data.song);
+        io.emit('songRequest', data); // Mengirim permintaan lagu ke semua pengguna
+        io.emit('queueUpdate', songQueue);  // Update antrian lagu untuk semua pengguna
+    });
+
+    // Saat lagu telah selesai diputar, lanjutkan ke lagu berikutnya
+    socket.on('nextSong', () => {
+        if (songQueue.length > 0) {
+            songQueue.shift(); // Hapus lagu yang sudah diputar
+            io.emit('queueUpdate', songQueue);  // Update antrian lagu
+            if (songQueue.length > 0) {
+                io.emit('playNextSong', songQueue[0]); // Mainkan lagu berikutnya
+            }
         }
     });
 
@@ -35,22 +43,6 @@ io.on('connection', (socket) => {
         console.log('User disconnected');
     });
 });
-
-function playNextSong(io) {
-    if (songQueue.length > 0) {
-        const nextSong = songQueue.shift();  // Ambil lagu dari antrian
-        io.emit('playSong', nextSong);  // Kirim perintah ke semua klien untuk memainkan lagu
-        isPlaying = true;
-
-        // Simulasikan waktu bermain dengan delay sesuai durasi lagu (sebagai placeholder, durasi 3 menit di sini)
-        setTimeout(() => {
-            isPlaying = false;
-            playNextSong(io);  // Panggil fungsi lagi untuk memainkan lagu berikutnya
-        }, 180000);  // 180000ms = 3 menit (atau atur durasi lagu yang sebenarnya)
-    } else {
-        isPlaying = false;
-    }
-}
 
 server.listen(3000, () => {
     console.log('Server is running on port 3000');

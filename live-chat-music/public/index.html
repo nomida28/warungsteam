@@ -78,7 +78,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        const socket = io(); // Pastikan ini terhubung ke server Anda
+        const socket = io();
         let username = '';
         const songQueue = [];
 
@@ -90,6 +90,10 @@
             player = new YT.Player('player', {
                 height: '0',
                 width: '0',
+                playerVars: {
+                    'enablejsapi': 1,
+                    'origin': window.location.origin // Pastikan origin yang benar
+                },
                 events: {
                     'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange
@@ -193,6 +197,15 @@
             songDiv.innerHTML = `Request dari ${data.name}: <strong>${data.song}</strong>`;
             queueList.appendChild(songDiv);
             playNextSong();
+        });
+
+        // Menangani koneksi
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
         });
     </script>
 </body>

@@ -115,7 +115,7 @@
         }
 
         function searchYouTubeAndPlay(songTitle) {
-            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // Your API key
+            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U';
             const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
 
             fetch(searchUrl)

@@ -1,29 +1,24 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+const io = socketIo(server);
 
-app.use(cors());
-app.use(express.static('public'));
+app.use(express.static('public')); // Serve static files from the 'public' folder
 
 io.on('connection', (socket) => {
     console.log('User connected');
 
+    // When a message is received from the client
     socket.on('message', (data) => {
-        io.emit('message', data);
+        io.emit('message', data); // Broadcast to all users
     });
 
+    // When a song request is made
     socket.on('songRequest', (data) => {
-        io.emit('songRequest', data);
+        io.emit('songRequest', data); // Broadcast song request to all users
     });
 
     socket.on('disconnect', () => {

@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <div id="player"></div> <!-- YouTube Player will load here -->
+    <div id="player"></div> <!-- YouTube Player will be displayed here -->
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -98,10 +98,12 @@
         }
 
         function onPlayerReady(event) {
-            event.target.playVideo();
+            // Start playing once the player is ready
+            playNextSong();
         }
 
         function onPlayerStateChange(event) {
+            // Play the next song when the current one ends
             if (event.data === YT.PlayerState.ENDED) {
                 playNextSong();
             }
@@ -115,21 +117,24 @@
         }
 
         function searchYouTubeAndPlay(songTitle) {
-            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // Your API key
+            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // Use your API key here
             const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
 
             fetch(searchUrl)
                 .then(response => response.json())
                 .then(data => {
-                    const videoId = data.items[0].id.videoId;
-                    currentSong = songTitle;
-                    player.loadVideoById(videoId);
-                    player.playVideo();
+                    if (data.items.length > 0) {
+                        const videoId = data.items[0].id.videoId;
+                        currentSong = songTitle;
+                        player.loadVideoById(videoId);
+                    } else {
+                        console.error('No videos found for the song:', songTitle);
+                    }
                 })
                 .catch(error => console.error('Error fetching YouTube video:', error));
         }
 
-        // Start chat
+        // Start chat when the user enters their name
         document.getElementById('enterChat').addEventListener('click', () => {
             const nameInput = document.getElementById('username').value;
             if (nameInput.trim() !== '') {
@@ -141,7 +146,7 @@
             }
         });
 
-        // Send message
+        // Send message on button click or Enter key press
         document.getElementById('sendMessage').addEventListener('click', () => {
             sendMessage();
         });
@@ -167,6 +172,7 @@
             }
         }
 
+        // Handle incoming message history
         socket.on('history', (history) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = '';
@@ -178,6 +184,7 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
+        // Handle incoming messages
         socket.on('message', (data) => {
             const div = document.createElement('div');
             div.innerHTML = `${data.name}: ${data.message}`;
@@ -186,13 +193,15 @@
             messages.scrollTop = messages.scrollHeight;
         });
 
+        // Handle incoming song requests
         socket.on('songRequest', (data) => {
             const queueList = document.getElementById('queueList');
             const songDiv = document.createElement('div');
             songDiv.className = 'song-request';
-            songDiv.innerHTML = `Request from ${data.name}: <strong>${data.song}</strong>`;
+            songDiv.innerHTML = `Request dari ${data.name}: <strong>${data.song}</strong>`;
             queueList.appendChild(songDiv);
-            playNextSong();
+            songQueue.push(data.song); // Add song to the queue
+            playNextSong(); // Start playing the song
         });
     </script>
 </body>

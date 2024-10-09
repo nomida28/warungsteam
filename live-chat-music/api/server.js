@@ -1,39 +1,31 @@
-const { Server } = require('socket.io');
-const { createServer } = require('http');
-
-let io;
+const { Server } = require("socket.io");
 
 module.exports = (req, res) => {
-    if (!io) {
-        const httpServer = createServer((req, res) => {
-            res.writeHead(404);
-            res.end();
-        });
+    if (!res.socket.server.io) {
+        console.log("Socket.IO server is initializing...");
+        const io = new Server(res.socket.server);
 
-        io = new Server(httpServer, {
-            cors: {
-                origin: '*',
-            },
-        });
+        io.on("connection", (socket) => {
+            console.log("User connected");
 
-        io.on('connection', (socket) => {
-            console.log('User connected');
-
-            socket.on('message', (data) => {
-                io.emit('message', data);
+            // Listen for chat messages
+            socket.on("message", (data) => {
+                io.emit("message", data);
             });
 
-            socket.on('songRequest', (data) => {
-                io.emit('songRequest', data);
+            // Listen for song requests
+            socket.on("songRequest", (data) => {
+                io.emit("songRequest", data);
             });
 
-            socket.on('disconnect', () => {
-                console.log('User disconnected');
+            socket.on("disconnect", () => {
+                console.log("User disconnected");
             });
         });
 
-        httpServer.listen(3000);
+        res.socket.server.io = io;
+    } else {
+        console.log("Socket.IO server already running");
     }
-
-    res.end('Socket.IO Server is running');
+    res.end();
 };

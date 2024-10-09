@@ -1,12 +1,13 @@
 {
   "name": "live-chat-music",
   "version": "1.0.0",
-  "description": "Live chat with YouTube music request using Socket.IO",
-  "main": "api/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node api/server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "socket.io": "^4.0.0"
+    "express": "^4.17.1",
+    "socket.io": "^4.0.1",
+    "cors": "^2.8.5"
   }
 }

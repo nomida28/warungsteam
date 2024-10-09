@@ -72,10 +72,9 @@
         </div>
     </div>
 
-    <div id="player"></div> <!-- YouTube Player akan tampil di sini -->
+    <div id="player"></div> <!-- YouTube Player will load here -->
 
-    <!-- Socket.IO CDN -->
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
@@ -83,7 +82,7 @@
         let username = '';
         const songQueue = [];
 
-        // Inisialisasi YouTube Player API
+        // Initialize YouTube Player API
         let player;
         let currentSong = '';
 
@@ -116,7 +115,7 @@
         }
 
         function searchYouTubeAndPlay(songTitle) {
-            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U';
+            const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // Your API key
             const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
 
             fetch(searchUrl)
@@ -130,7 +129,7 @@
                 .catch(error => console.error('Error fetching YouTube video:', error));
         }
 
-        // Fungsi untuk memulai chat
+        // Start chat
         document.getElementById('enterChat').addEventListener('click', () => {
             const nameInput = document.getElementById('username').value;
             if (nameInput.trim() !== '') {
@@ -142,7 +141,7 @@
             }
         });
 
-        // Fungsi untuk mengirim pesan
+        // Send message
         document.getElementById('sendMessage').addEventListener('click', () => {
             sendMessage();
         });
@@ -191,7 +190,7 @@
             const queueList = document.getElementById('queueList');
             const songDiv = document.createElement('div');
             songDiv.className = 'song-request';
-            songDiv.innerHTML = `Request dari ${data.name}: <strong>${data.song}</strong>`;
+            songDiv.innerHTML = `Request from ${data.name}: <strong>${data.song}</strong>`;
             queueList.appendChild(songDiv);
             playNextSong();
         });

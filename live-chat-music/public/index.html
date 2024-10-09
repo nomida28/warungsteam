@@ -74,7 +74,9 @@
 
     <div id="player"></div> <!-- YouTube Player akan tampil di sini -->
 
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- Load Socket.IO dari CDN -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <!-- Load YouTube Iframe API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
@@ -103,12 +105,15 @@
 
         function onPlayerStateChange(event) {
             if (event.data === YT.PlayerState.ENDED) {
-                socket.emit('nextSong'); // Minta server untuk memulai lagu berikutnya
+                playNextSong();
             }
         }
 
-        function playNextSong(songTitle) {
-            searchYouTubeAndPlay(songTitle);
+        function playNextSong() {
+            if (songQueue.length > 0) {
+                const songTitle = songQueue.shift();
+                searchYouTubeAndPlay(songTitle);
+            }
         }
 
         function searchYouTubeAndPlay(songTitle) {
@@ -164,7 +169,6 @@
             }
         }
 
-        // Menerima history pesan dari server
         socket.on('history', (history) => {
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = '';
@@ -176,7 +180,6 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
-        // Menerima pesan dari server
         socket.on('message', (data) => {
             const div = document.createElement('div');
             div.innerHTML = `${data.name}: ${data.message}`;
@@ -185,30 +188,13 @@
             messages.scrollTop = messages.scrollHeight;
         });
 
-        // Update antrian lagu
-        socket.on('queueUpdate', (updatedQueue) => {
-            const queueList = document.getElementById('queueList');
-            queueList.innerHTML = '';  // Hapus antrian lama
-            updatedQueue.forEach(song => {
-                const songDiv = document.createElement('div');
-                songDiv.className = 'song-request';
-                songDiv.innerHTML = `<strong>${song}</strong>`;
-                queueList.appendChild(songDiv);
-            });
-        });
-
-        // Menerima permintaan lagu dan memulai pemutaran
         socket.on('songRequest', (data) => {
             const queueList = document.getElementById('queueList');
             const songDiv = document.createElement('div');
             songDiv.className = 'song-request';
-            songDiv.innerHTML = `<strong>${data.song}</strong>`;
+            songDiv.innerHTML = `Request dari ${data.name}: <strong>${data.song}</strong>`;
             queueList.appendChild(songDiv);
-        });
-
-        // Mainkan lagu berikutnya saat lagu saat ini selesai
-        socket.on('playNextSong', (nextSong) => {
-            playNextSong(nextSong);
+            playNextSong();
         });
     </script>
 </body>

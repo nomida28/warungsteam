@@ -1,31 +1,31 @@
-const { Server } = require("socket.io");
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 
-module.exports = (req, res) => {
-    if (!res.socket.server.io) {
-        console.log("Socket.IO server is initializing...");
-        const io = new Server(res.socket.server);
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
-        io.on("connection", (socket) => {
-            console.log("User connected");
+app.use(express.static('public')); // File statis disajikan dari folder 'public'
 
-            // Listen for chat messages
-            socket.on("message", (data) => {
-                io.emit("message", data);
-            });
+io.on('connection', (socket) => {
+    console.log('User connected');
 
-            // Listen for song requests
-            socket.on("songRequest", (data) => {
-                io.emit("songRequest", data);
-            });
+    // Saat pesan diterima dari klien
+    socket.on('message', (data) => {
+        io.emit('message', data); // Kirim kembali ke semua pengguna
+    });
 
-            socket.on("disconnect", () => {
-                console.log("User disconnected");
-            });
-        });
+    // Saat ada permintaan lagu
+    socket.on('songRequest', (data) => {
+        io.emit('songRequest', data); // Kirim permintaan lagu ke semua pengguna
+    });
 
-        res.socket.server.io = io;
-    } else {
-        console.log("Socket.IO server already running");
-    }
-    res.end();
-};
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
+server.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});

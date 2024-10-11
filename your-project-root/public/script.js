@@ -1,15 +1,14 @@
-const socket = io('/api/socket'); // Menggunakan serverless route
-let username = '';
-const songQueue = [];
+const socket = io();
 
-// Inisialisasi YouTube Player API
+// YouTube Player
 let player;
-let currentSong = '';
+const videoId = 'HxkrFFhhgjY'; // Ganti dengan ID video YouTube default
 
 function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
-        height: '0',
-        width: '0',
+        height: '390',
+        width: '640',
+        videoId: videoId,
         events: {
             'onReady': onPlayerReady,
             'onStateChange': onPlayerStateChange
@@ -23,98 +22,28 @@ function onPlayerReady(event) {
 
 function onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.ENDED) {
-        playNextSong();
+        // Emit event to play next song
+        socket.emit('nextSong');
     }
 }
 
-function playNextSong() {
-    if (songQueue.length > 0) {
-        const songTitle = songQueue.shift();
-        searchYouTubeAndPlay(songTitle);
-    }
-}
+// Chat Functionality
+document.getElementById('send').onclick = function() {
+    const message = document.getElementById('message').value;
+    socket.emit('chat message', message);
+    document.getElementById('message').value = '';
+};
 
-function searchYouTubeAndPlay(songTitle) {
-    const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // API key kamu
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
-
-    fetch(searchUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data.items.length > 0) {
-                const videoId = data.items[0].id.videoId;
-                currentSong = songTitle;
-                player.loadVideoById(videoId);
-                player.playVideo();
-            } else {
-                console.error('No video found for:', songTitle);
-            }
-        })
-        .catch(error => console.error('Error fetching YouTube video:', error));
-}
-
-// Fungsi untuk memulai chat
-document.getElementById('enterChat').addEventListener('click', () => {
-    const nameInput = document.getElementById('username').value;
-    if (nameInput.trim() !== '') {
-        username = nameInput;
-        document.getElementById('name-container').style.display = 'none';
-        document.getElementById('chat-container').style.display = 'block';
-    } else {
-        alert('Please enter a valid name');
-    }
+socket.on('chat message', function(msg) {
+    const item = document.createElement('div');
+    item.textContent = msg;
+    document.getElementById('song-requests').appendChild(item);
 });
 
-// Fungsi untuk mengirim pesan
-document.getElementById('sendMessage').addEventListener('click', () => {
-    sendMessage();
-});
-
-document.getElementById('inputMessage').addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        sendMessage();
-        event.preventDefault();
-    }
-});
-
-function sendMessage() {
-    const msg = document.getElementById('inputMessage').value;
-    if (msg.trim() !== '') {
-        if (msg.startsWith('req ')) {
-            const songRequest = msg.slice(4);
-            songQueue.push(songRequest);
-            socket.emit('songRequest', { name: username, song: songRequest });
-        } else {
-            socket.emit('message', { name: username, message: msg });
-        }
-        document.getElementById('inputMessage').value = '';
-    }
-}
-
-socket.on('history', (history) => {
-    const messagesDiv = document.getElementById('messages');
-    messagesDiv.innerHTML = '';
-    history.forEach(data => {
-        const div = document.createElement('div');
-        div.innerHTML = `${data.name}: ${data.message}`;
-        messagesDiv.appendChild(div);
-    });
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
-
-socket.on('message', (data) => {
-    const div = document.createElement('div');
-    div.innerHTML = `${data.name}: ${data.message}`;
-    document.getElementById('messages').appendChild(div);
-    const messages = document.getElementById('messages');
-    messages.scrollTop = messages.scrollHeight;
-});
-
-socket.on('songRequest', (data) => {
-    const queueList = document.getElementById('queueList');
-    const songDiv = document.createElement('div');
-    songDiv.className = 'song-request';
-    songDiv.innerHTML = `Request dari ${data.name}: <strong>${data.song}</strong>`;
-    queueList.appendChild(songDiv);
-    playNextSong();
+// Handle song requests
+socket.on('song request', function(song) {
+    // Add song request to the list
+    const item = document.createElement('div');
+    item.textContent = song;
+    document.getElementById('song-requests').appendChild(item);
 });

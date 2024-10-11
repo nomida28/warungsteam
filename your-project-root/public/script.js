@@ -35,16 +35,20 @@ function playNextSong() {
 }
 
 function searchYouTubeAndPlay(songTitle) {
-    const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // Sesuaikan dengan API key kamu
+    const apiKey = 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U'; // API key kamu
     const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(songTitle)}&key=${apiKey}`;
 
     fetch(searchUrl)
         .then(response => response.json())
         .then(data => {
-            const videoId = data.items[0].id.videoId;
-            currentSong = songTitle;
-            player.loadVideoById(videoId);
-            player.playVideo();
+            if (data.items.length > 0) {
+                const videoId = data.items[0].id.videoId;
+                currentSong = songTitle;
+                player.loadVideoById(videoId);
+                player.playVideo();
+            } else {
+                console.error('No video found for:', songTitle);
+            }
         })
         .catch(error => console.error('Error fetching YouTube video:', error));
 }

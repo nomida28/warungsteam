@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat with YouTube Music</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="name-container">
+        <h2>Enter Your Name</h2>
+        <input id="username" placeholder="Your name" autocomplete="off">
+        <button id="enterChat">Enter Chat</button>
+    </div>
+
+    <div id="chat-container" style="display:none;">
+        <h1>Live Chat</h1>
+        <div id="messages"></div>
+        <input id="inputMessage" placeholder="Type a message" autocomplete="off">
+        <button id="sendMessage">Send</button>
+
+        <div id="songQueue">
+            <h3>Song Request Queue:</h3>
+            <div id="queueList"></div>
+        </div>
+    </div>
+
+    <div id="player"></div> <!-- YouTube Player akan tampil di sini -->
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="/script.js"></script>
+</body>
+</html>

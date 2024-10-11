@@ -1,0 +1,12 @@
+{
+  "name": "live-chat-music-serverless",
+  "version": "1.0.0",
+  "description": "Live chat with music requests using serverless API on Vercel",
+  "main": "index.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "socket.io": "^4.0.1"
+  }
+}

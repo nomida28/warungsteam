@@ -4,54 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Chat with YouTube Music</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        #name-container, #chat-container {
-            width: 100%;
-            max-width: 600px;
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        #messages {
-            height: 400px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #fafafa;
-        }
-        #inputMessage {
-            width: calc(100% - 90px);
-            padding: 10px;
-            margin-right: 10px;
-        }
-        #sendMessage {
-            padding: 10px 20px;
-        }
-        #songQueue {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f9e79f;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        audio {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div id="name-container">
@@ -72,7 +25,7 @@
         </div>
     </div>
 
-    <div id="player"></div> <!-- YouTube Player akan tampil di sini -->
+    <div id="player"></div> <!-- YouTube Player will appear here -->
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -82,7 +35,6 @@
         let username = '';
         const songQueue = [];
 
-        // Inisialisasi YouTube Player API
         let player;
         let currentSong = '';
 
@@ -90,10 +42,6 @@
             player = new YT.Player('player', {
                 height: '0',
                 width: '0',
-                playerVars: {
-                    'enablejsapi': 1,
-                    'origin': window.location.origin // Pastikan origin yang benar
-                },
                 events: {
                     'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange
@@ -133,7 +81,6 @@
                 .catch(error => console.error('Error fetching YouTube video:', error));
         }
 
-        // Fungsi untuk memulai chat
         document.getElementById('enterChat').addEventListener('click', () => {
             const nameInput = document.getElementById('username').value;
             if (nameInput.trim() !== '') {
@@ -145,7 +92,6 @@
             }
         });
 
-        // Fungsi untuk mengirim pesan
         document.getElementById('sendMessage').addEventListener('click', () => {
             sendMessage();
         });
@@ -197,15 +143,6 @@
             songDiv.innerHTML = `Request dari ${data.name}: <strong>${data.song}</strong>`;
             queueList.appendChild(songDiv);
             playNextSong();
-        });
-
-        // Menangani koneksi
-        socket.on('connect', () => {
-            console.log('Connected to server');
-        });
-
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
         });
     </script>
 </body>

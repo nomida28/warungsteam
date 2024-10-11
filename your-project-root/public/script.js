@@ -3,7 +3,7 @@ const socket = io();
 
 // Pemain YouTube
 let player;
-const defaultVideoId = 'VIDEO_ID'; // Ganti dengan ID video YouTube default
+const defaultVideoId = 'BxabNemOlKw'; // Ganti dengan ID video YouTube default
 
 function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {

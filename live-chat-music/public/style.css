@@ -47,10 +47,6 @@ body {
     border: 1px solid #ccc;
 }
 
-.song-request {
-    margin-bottom: 5px;
-}
-
 audio {
     display: none;
 }

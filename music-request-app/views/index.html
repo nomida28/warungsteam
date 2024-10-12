@@ -31,7 +31,7 @@
     });
 
     socket.on('playSong', (song) => {
-      audioPlayer.src = `https://www.youtubeinmp3.com/fetch/?video=${song.url}`; // Convert YouTube to MP3
+      audioPlayer.src = `https://www.youtubeinmp3.com/fetch/?video=${song.url}`;  // Mengonversi YouTube ke MP3
       audioPlayer.play();
     });
 
@@ -47,7 +47,6 @@
       alert(message);
     });
 
-    // Notify the server when a song has finished playing
     audioPlayer.addEventListener('ended', () => {
       socket.emit('songFinished');
     });

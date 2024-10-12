@@ -69,4 +69,22 @@ io.on('connection', (socket) => {
   // Menangani event ketika lagu selesai diputar
   socket.on('songFinished', () => {
     if (currentSong) {
-      userRequests[currentSong.r
+      userRequests[currentSong.requestedBy]--;  // Kurangi hitungan request untuk user
+    }
+    playNextSong();  // Putar lagu berikutnya
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+    delete userRequests[socket.id];  // Hapus data user yang keluar
+  });
+});
+
+// Menangani rute untuk halaman tidak ditemukan
+app.get('*', (req, res) => {
+  res.sendFile(__dirname + '/views/index.html');
+});
+
+server.listen(3000, () => {
+  console.log('Server listening on port 3000');
+});

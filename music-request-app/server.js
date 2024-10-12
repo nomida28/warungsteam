@@ -7,43 +7,43 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-app.use(express.static('public'));
+app.use(express.static('public'));  // Melayani file statis dari folder public
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html');
+  res.sendFile(__dirname + '/views/index.html');  // Melayani halaman utama
 });
 
 let songQueue = [];
 let currentSong = null;
-let userRequests = {};  // Track how many requests each user has made
+let userRequests = {};  // Lacak jumlah request setiap user
 
-// Play the next song in the queue
+// Fungsi untuk memutar lagu berikutnya
 function playNextSong() {
   if (songQueue.length > 0) {
-    currentSong = songQueue.shift();  // Get the next song from the queue
-    io.emit('playSong', currentSong); // Notify clients to play the song
+    currentSong = songQueue.shift();  // Ambil lagu berikutnya dari antrian
+    io.emit('playSong', currentSong);  // Kirim instruksi ke client untuk memutar lagu
   } else {
     currentSong = null;
-    io.emit('queueEmpty');  // Notify clients that the queue is empty
+    io.emit('queueEmpty');  // Beritahu client jika antrian kosong
   }
 }
 
-// Handle user connections
+// Menangani koneksi user
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('User connected:', socket.id);
 
-  // Initialize user's request count
+  // Inisialisasi jumlah request user
   if (!userRequests[socket.id]) {
     userRequests[socket.id] = 0;
   }
 
-  // Send the current song queue to the connected user
+  // Kirim antrian lagu ke user yang baru terhubung
   socket.emit('songQueueUpdated', songQueue);
 
-  // Handle song request
+  // Menangani request lagu
   socket.on('requestSong', async (url) => {
     if (ytdl.validateURL(url)) {
-      if (userRequests[socket.id] < 3) {  // Check if user hasn't exceeded the 3-song limit
+      if (userRequests[socket.id] < 3) {  // Batasi 3 request per user
         const songInfo = await ytdl.getInfo(url);
         const songData = {
           title: songInfo.videoDetails.title,
@@ -52,32 +52,31 @@ io.on('connection', (socket) => {
         };
 
         songQueue.push(songData);
-        userRequests[socket.id]++;  // Increase the user's request count
+        userRequests[socket.id]++;  // Tambahkan hitungan request user
         io.emit('songQueueUpdated', songQueue);
 
         if (!currentSong) {
-          playNextSong();  // Autoplay if no song is currently playing
+          playNextSong();  // Mulai memutar jika tidak ada lagu yang diputar
         }
       } else {
-        socket.emit('requestLimitExceeded', 'You have reached the request limit of 3 songs. Please wait until your songs are played.');
+        socket.emit('requestLimitExceeded', 'You have reached the limit of 3 song requests. Please wait until your songs are played.');
       }
     } else {
       socket.emit('invalidUrl', 'Invalid YouTube URL');
     }
   });
 
-  // Handle song finished event (sent from the client)
+  // Menangani event ketika lagu selesai diputar
   socket.on('songFinished', () => {
-    // Decrease the request count for the user who requested the finished song
     if (currentSong) {
-      userRequests[currentSong.requestedBy]--;
+      userRequests[currentSong.requestedBy]--;  // Kurangi hitungan request untuk user
     }
-    playNextSong();  // Play the next song
+    playNextSong();  // Putar lagu berikutnya
   });
 
   socket.on('disconnect', () => {
-    console.log('A user disconnected');
-    delete userRequests[socket.id];  // Clean up the user's request count
+    console.log('User disconnected:', socket.id);
+    delete userRequests[socket.id];  // Hapus data user yang keluar
   });
 });
 

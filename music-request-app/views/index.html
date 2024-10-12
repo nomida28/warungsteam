@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Request App</title>
+</head>
+<body>
+  <h1>Request a Song</h1>
+  <input id="songUrl" type="text" placeholder="Enter YouTube URL">
+  <button onclick="requestSong()">Request</button>
+
+  <h2>Song Queue</h2>
+  <ul id="songQueue"></ul>
+
+  <audio id="audioPlayer" controls></audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const audioPlayer = document.getElementById('audioPlayer');
+
+    socket.on('songQueueUpdated', (queue) => {
+      const songQueue = document.getElementById('songQueue');
+      songQueue.innerHTML = '';
+      queue.forEach(song => {
+        const li = document.createElement('li');
+        li.textContent = song.title;
+        songQueue.appendChild(li);
+      });
+    });
+
+    socket.on('playSong', (song) => {
+      audioPlayer.src = `https://www.youtubeinmp3.com/fetch/?video=${song.url}`; // Convert YouTube to MP3
+      audioPlayer.play();
+    });
+
+    socket.on('queueEmpty', () => {
+      console.log('The queue is empty, no more songs to play.');
+    });
+
+    socket.on('invalidUrl', (message) => {
+      alert(message);
+    });
+
+    socket.on('requestLimitExceeded', (message) => {
+      alert(message);
+    });
+
+    // Notify the server when a song has finished playing
+    audioPlayer.addEventListener('ended', () => {
+      socket.emit('songFinished');
+    });
+
+    function requestSong() {
+      const songUrl = document.getElementById('songUrl').value;
+      socket.emit('requestSong', songUrl);
+      document.getElementById('songUrl').value = '';
+    }
+  </script>
+</body>
+</html>

@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
 
 let songQueue = [];
 let currentSong = null;
-let userRequests = {};  // Lacak jumlah request setiap user
+let userRequests = {};  // Melacak jumlah request setiap user
 
 // Fungsi untuk memutar lagu berikutnya
 function playNextSong() {
@@ -69,17 +69,4 @@ io.on('connection', (socket) => {
   // Menangani event ketika lagu selesai diputar
   socket.on('songFinished', () => {
     if (currentSong) {
-      userRequests[currentSong.requestedBy]--;  // Kurangi hitungan request untuk user
-    }
-    playNextSong();  // Putar lagu berikutnya
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    delete userRequests[socket.id];  // Hapus data user yang keluar
-  });
-});
-
-server.listen(3000, () => {
-  console.log('Server listening on port 3000');
-});
+      userRequests[currentSong.r

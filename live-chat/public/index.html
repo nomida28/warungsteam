@@ -1,20 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Chat - Music Request</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Live Chat</h1>
-        <input type="text" id="username" placeholder="Enter your name" required>
-        <button id="enterChat">Join as User</button>
-        <button id="adminLogin">Login as Admin</button>
+  <div id="main">
+    <h1>Live Chat Music Request</h1>
+    <div id="login">
+      <input type="text" id="username" placeholder="Enter your name">
+      <button id="login-btn">Login as User</button>
+      <button id="admin-login-btn">Login as Admin</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
+    <div id="chat" style="display:none;">
+      <div id="messages"></div>
+      <input type="text" id="message-input" placeholder="Type your message">
+      <button id="send-btn">Send</button>
+      <div id="song-queue"></div>
+      <input type="text" id="song-request" placeholder="Req artist - song">
+      <button id="request-btn">Request Song</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    let username = '';
+
+    document.getElementById('login-btn').onclick = () => {
+      username = document.getElementById('username').value;
+      if (username) {
+        socket.emit('login', { username });
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('chat').style.display = 'block';
+      }
+    };
+
+    document.getElementById('admin-login-btn').onclick = () => {
+      username = 'Admin-' + document.getElementById('username').value;
+      if (username) {
+        socket.emit('admin-login', { username });
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('chat').style.display = 'block';
+      }
+    };
+
+    document.getElementById('send-btn').onclick = () => {
+      const message = document.getElementById('message-input').value;
+      socket.emit('chat message', { username, message });
+      document.getElementById('message-input').value = '';
+    };
+
+    document.getElementById('request-btn').onclick = () => {
+      const songRequest = document.getElementById('song-request').value;
+      if (songRequest.startsWith('Req')) {
+        socket.emit('song request', { username, songRequest });
+        document.get

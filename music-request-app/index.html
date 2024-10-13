@@ -20,9 +20,10 @@
         <iframe id="youtubePlayer" width="560" height="315" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
 
+    <!-- Pastikan untuk memuat socket.io setelah semua elemen di halaman ini -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        const socket = io(); // Pastikan ini ada setelah skrip socket.io dimuat
         const songInput = document.getElementById('songInput');
         const requestButton = document.getElementById('requestButton');
         const queueList = document.getElementById('queueList');

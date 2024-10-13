@@ -7,14 +7,13 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const youtube = google.youtube('v3');
+const queue = []; // Menyimpan daftar antrian lagu
 
-// Middleware untuk melayani file statis
 app.use(express.static('public'));
 
-// Inisialisasi queue untuk lagu
-let queue = [];
-
 io.on('connection', (socket) => {
+    console.log('User connected');
+
     socket.on('song request', async (data) => {
         const { title, artist, username } = data;
 
@@ -23,7 +22,7 @@ io.on('connection', (socket) => {
             part: 'snippet',
             q: `${artist} - ${title}`,
             type: 'video',
-            key: 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U' // Ganti dengan API key Anda
+            key: 'AIzaSyAncxaK5j7GS_9AE1eERrub-F_561F6v0U' // API key yang valid
         });
 
         if (response.data.items.length > 0) {
@@ -34,12 +33,9 @@ io.on('connection', (socket) => {
                 username: username,
                 videoId: videoId // Mengirimkan video ID ke klien
             };
-            queue.push(song); // Menambahkan lagu ke queue
+            queue.push(song); // Menambahkan lagu ke antrian
             io.emit('song added', song); // Mengirimkan lagu yang ditambahkan ke semua klien
-            
-            if (queue.length === 1) { // Jika queue sebelumnya kosong, mulai putar lagu pertama
-                io.emit('queue updated', queue);
-            }
+            io.emit('queue updated', queue); // Memperbarui queue untuk semua klien
         }
     });
 
@@ -48,6 +44,10 @@ io.on('connection', (socket) => {
             queue.shift(); // Menghapus lagu yang sedang diputar
             io.emit('queue updated', queue); // Memperbarui queue untuk semua klien
         }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
     });
 });
 

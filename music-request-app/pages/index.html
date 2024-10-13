@@ -1,0 +1,75 @@
+import { useEffect, useState } from 'react';
+import socket from '../public/socket'; 
+
+export default function Home() {
+  const [songQueue, setSongQueue] = useState([]);
+  const [currentSong, setCurrentSong] = useState(null);
+
+  useEffect(() => {
+    // Initialize YouTube Iframe API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // Listen for queued songs
+    socket.on('song queued', (song) => {
+      setSongQueue((prevQueue) => [...prevQueue, song]);
+    });
+
+    return () => {
+      socket.off('song queued');
+    };
+  }, []);
+
+  useEffect(() => {
+    if (songQueue.length > 0 && !currentSong) {
+      playNextSong();
+    }
+  }, [songQueue]);
+
+  const playNextSong = () => {
+    const nextSong = songQueue.shift();
+    setCurrentSong(nextSong);
+
+    // Replace 'YOUR_VIDEO_ID' with the video ID from YouTube
+    const player = new window.YT.Player('player', {
+      videoId: 'YOUR_VIDEO_ID', 
+      events: {
+        onReady: (event) => {
+          event.target.playVideo();
+        },
+        onStateChange: (event) => {
+          if (event.data === window.YT.PlayerState.ENDED) {
+            setCurrentSong(null);
+            playNextSong();
+          }
+        },
+      },
+    });
+  };
+
+  const handleRequestSong = (song) => {
+    socket.emit('request song', song);
+  };
+
+  return (
+    <div>
+      <h1>Live Chat Music Request</h1>
+
+      <button onClick={() => handleRequestSong('Artist - Song Title')}>
+        Request a Song
+      </button>
+
+      <h2>Song Queue</h2>
+      <ul>
+        {songQueue.map((song, index) => (
+          <li key={index}>{song}</li>
+        ))}
+      </ul>
+
+      {/* YouTube Iframe player */}
+      <div id="player" style={{ display: 'none' }}></div>
+    </div>
+  );
+}

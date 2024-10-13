@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Permintaan Musik</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Menyembunyikan iframe */
+        #youtubePlayer {
+            display: none; /* Menyembunyikan video */
+        }
+    </style>
+</head>
+<body>
+    <h1>Aplikasi Permintaan Musik</h1>
+    <input id="songInput" type="text" placeholder="Masukkan artis - judul">
+    <button id="requestButton">Request Song</button>
+    <h2>Antrean:</h2>
+    <ul id="queueList"></ul>
+    <div id="playerContainer" style="display:none;">
+        <iframe id="youtubePlayer" width="560" height="315" src="" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('requestButton').addEventListener('click', () => {
+            const song = document.getElementById('songInput').value;
+            socket.emit('request song', song);
+            document.getElementById('songInput').value = ''; // Clear input
+        });
+
+        socket.on('update queue', (queue) => {
+            const queueList = document.getElementById('queueList');
+            queueList.innerHTML = '';
+            queue.forEach((song) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = song;
+                queueList.appendChild(listItem);
+            });
+        });
+
+        socket.on('play song', (videoId) => {
+            const playerUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&mute=0`;
+            const player = document.getElementById('youtubePlayer');
+            player.src = playerUrl;
+            document.getElementById('playerContainer').style.display = 'block'; // Menampilkan player
+        });
+    </script>
+</body>
+</html>
+

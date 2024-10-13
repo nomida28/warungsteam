@@ -1,0 +1,16 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    text-align: center;
+}
+
+#queue {
+    margin-top: 20px;
+}
+
+#queueList {
+    list-style-type: none;
+    padding: 0;
+}

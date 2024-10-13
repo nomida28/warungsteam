@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Request App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Music Request App</h1>
+    <div>
+        <input type="text" id="songInput" placeholder="Masukkan artis - judul">
+        <button id="requestButton">Request</button>
+    </div>
+    <div id="queue">
+        <h2>Antrean Musik</h2>
+        <ul id="queueList"></ul>
+    </div>
+    <div id="player" style="display: none;">
+        <iframe id="youtubePlayer" width="560" height="315" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const songInput = document.getElementById('songInput');
+        const requestButton = document.getElementById('requestButton');
+        const queueList = document.getElementById('queueList');
+        const player = document.getElementById('player');
+        const youtubePlayer = document.getElementById('youtubePlayer');
+
+        requestButton.addEventListener('click', () => {
+            const song = songInput.value;
+            if (song) {
+                socket.emit('request song', song);
+                songInput.value = '';
+            }
+        });
+
+        socket.on('update queue', (queue) => {
+            queueList.innerHTML = '';
+            queue.forEach(song => {
+                const li = document.createElement('li');
+                li.textContent = song;
+                queueList.appendChild(li);
+            });
+            if (queue.length > 0) {
+                playMusic(queue[0]);
+            }
+        });
+
+        function playMusic(song) {
+            const videoId = extractVideoId(song); // Anda harus mengimplementasikan logika ini untuk mendapatkan ID video dari URL YouTube
+            youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
+            player.style.display = 'block';
+            setTimeout(() => {
+                socket.emit('play next');
+            }, 10000); // Ganti dengan durasi yang sesuai
+        }
+
+        function extractVideoId(song) {
+            // Gantilah dengan logika yang sesuai untuk mendapatkan video ID dari YouTube
+            // Misalnya, jika input adalah "artist - title", Anda mungkin perlu mencari ID video dari API YouTube
+            return 'dQw4w9WgXcQ'; // ID video contoh, ganti dengan logika pencarian
+        }
+    </script>
+</body>
+</html>

@@ -16,8 +16,10 @@
     <button id="send-btn">Kirim</button>
 
     <!-- Tombol untuk skip lagu -->
-    <input type="password" id="skip-pin" placeholder="Masukkan PIN untuk skip lagu" />
-    <button id="skip-btn">Next</button>
+    <form>
+        <input type="password" id="skip-pin" placeholder="Masukkan PIN untuk skip lagu" />
+        <button type="button" id="skip-btn">Next</button>
+    </form>
 
     <!-- Pemutar musik menggunakan YouTube IFrame API -->
     <div id="player"></div>
@@ -55,6 +57,7 @@
                 if (queue.length > 0) {
                     player.loadVideoById(queue[0].videoId); // Memuat lagu berikutnya
                 }
+                socket.emit('queue updated', queue); // Memperbarui queue setelah lagu selesai
             }
         }
 
@@ -84,12 +87,10 @@
         socket.on('song added', (song) => {
             queue.push(song);
             displayRequest(song);
-        });
-
-        // Terima perintah untuk memutar lagu
-        socket.on('play song', (videoId) => {
-            player.loadVideoById(videoId);
-            currentSong = queue[0]; // Set lagu yang sedang diputar
+            if (!currentSong) { // Jika tidak ada lagu yang sedang diputar
+                player.loadVideoById(song.videoId);
+                currentSong = song;
+            }
         });
 
         // Menampilkan permintaan lagu di chat box
@@ -114,9 +115,7 @@
         socket.on('queue updated', (newQueue) => {
             queue = newQueue;
             if (queue.length > 0) {
-                player.loadVideoById(queue[0].videoId); // Memuat video berikutnya
-            } else {
-                currentSong = null; // Reset currentSong jika queue kosong
+                player.loadVideoById(queue[0].videoId);
             }
         });
     </script>

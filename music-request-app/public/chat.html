@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Music Request App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Music Request Chat</h1>
+    <div id="chat-box"></div>
+
+    <!-- Input untuk memasukkan nama -->
+    <input type="text" id="username" placeholder="Masukkan Nama" />
+    <input type="text" id="song-request" placeholder="Masukkan Request !req artist - title" />
+    <button id="send-btn">Kirim</button>
+
+    <!-- Tombol untuk skip lagu -->
+    <input type="password" id="skip-pin" placeholder="Masukkan PIN untuk skip lagu" />
+    <button id="skip-btn">Next</button>
+
+    <!-- Pemutar musik menggunakan YouTube IFrame API -->
+    <div id="player"></div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let player;
+        let queue = [];
+        let currentSong = null;
+
+        // Buat YouTube Player
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '0', // Menyembunyikan pemutar
+                width: '0',  // Menyembunyikan pemutar
+                videoId: '',
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            if (queue.length > 0) {
+                player.loadVideoById(queue[0].videoId); // Memuat video pertama di queue
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED && queue.length > 0) {
+                queue.shift(); // Menghapus lagu yang sudah selesai
+                if (queue.length > 0) {
+                    player.loadVideoById(queue[0].videoId); // Memuat lagu berikutnya
+                }
+            }
+        }
+
+        // Ketika pengguna menekan tombol kirim
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            const songRequest = document.getElementById('song-request').value;
+
+            if (username && songRequest.startsWith('!req')) {
+                const requestData = parseRequest(songRequest, username);
+                socket.emit('song request', requestData); // Mengirim permintaan lagu
+            }
+        });
+
+        // Fungsi untuk mem-parsing permintaan lagu
+        function parseRequest(request, username) {
+            const parts = request.split('!req ')[1].split(' - ');
+            return {
+                title: parts[1],
+                artist: parts[0],
+                username: username,
+                videoId: '' // Ini akan diisi oleh server
+            };
+        }
+
+        // Terima permintaan lagu dari server
+        socket.on('song added', (song) => {
+            queue.push(song);
+            displayRequest(song);
+        });
+
+        // Terima perintah untuk memutar lagu
+        socket.on('play song', (videoId) => {
+            player.loadVideoById(videoId);
+            currentSong = queue[0]; // Set lagu yang sedang diputar
+        });
+
+        // Menampilkan permintaan lagu di chat box
+        function displayRequest(song) {
+            const chatBox = document.getElementById('chat-box');
+            const requestText = document.createElement('div');
+            requestText.textContent = `${song.artist} - ${song.title} - requested by "${song.username}"`;
+            chatBox.prepend(requestText); // Menambah permintaan lagu di atas
+        }
+
+        // Skip lagu saat pengguna berhasil mengirimkan skip
+        document.getElementById('skip-btn').addEventListener('click', () => {
+            const pin = document.getElementById('skip-pin').value;
+            if (pin === '1234') {
+                socket.emit('skip song');
+            } else {
+                alert('PIN salah. Tidak bisa skip lagu.');
+            }
+        });
+
+        // Memperbarui queue setelah lagu di-skip
+        socket.on('queue updated', (newQueue) => {
+            queue = newQueue;
+            if (queue.length > 0) {
+                player.loadVideoById(queue[0].videoId); // Memuat video berikutnya
+            } else {
+                currentSong = null; // Reset currentSong jika queue kosong
+            }
+        });
+    </script>
+</body>
+</html>

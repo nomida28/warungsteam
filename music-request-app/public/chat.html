@@ -22,10 +22,13 @@
     <!-- Pemutar musik menggunakan YouTube IFrame API -->
     <div id="player"></div>
 
+    <!-- Menghubungkan Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://warungsteam.vercel.app/socket.io/socket.io.js"></script> <!-- Ganti dengan URL yang sesuai -->
+
     <script>
-        const socket = io();
         let player;
         let queue = [];
         let currentSong = null;
@@ -33,8 +36,8 @@
         // Buat YouTube Player
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '0',
-                width: '0',
+                height: '0', // Menyembunyikan pemutar
+                width: '0',  // Menyembunyikan pemutar
                 videoId: '',
                 events: {
                     'onReady': onPlayerReady,
@@ -45,55 +48,63 @@
 
         function onPlayerReady(event) {
             if (queue.length > 0) {
-                player.loadVideoById(queue[0].videoId);
+                player.loadVideoById(queue[0].videoId); // Memuat video pertama di queue
             }
         }
 
         function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED && queue.length > 0) {
-                queue.shift();
+            if (event.data == YT.PlayerState.ENDED && queue.length > 0) {
+                queue.shift(); // Menghapus lagu yang sudah selesai
                 if (queue.length > 0) {
-                    player.loadVideoById(queue[0].videoId);
+                    player.loadVideoById(queue[0].videoId); // Memuat lagu berikutnya
                 }
             }
         }
 
+        // Menghubungkan dengan server menggunakan Socket.IO
+        const socket = io();
+
+        // Ketika pengguna menekan tombol kirim
         document.getElementById('send-btn').addEventListener('click', () => {
             const username = document.getElementById('username').value;
             const songRequest = document.getElementById('song-request').value;
 
             if (username && songRequest.startsWith('!req')) {
                 const requestData = parseRequest(songRequest, username);
-                socket.emit('song request', requestData);
+                socket.emit('song request', requestData); // Mengirim permintaan lagu
             }
         });
 
+        // Fungsi untuk mem-parsing permintaan lagu
         function parseRequest(request, username) {
             const parts = request.split('!req ')[1].split(' - ');
             return {
                 title: parts[1],
                 artist: parts[0],
                 username: username,
-                videoId: ''
+                videoId: '' // Ini akan diisi oleh server
             };
         }
 
+        // Terima permintaan lagu dari server
         socket.on('song added', (song) => {
             queue.push(song);
             displayRequest(song);
-            if (!currentSong) {
+            if (!currentSong) { // Jika tidak ada lagu yang sedang diputar
                 player.loadVideoById(song.videoId);
                 currentSong = song;
             }
         });
 
+        // Menampilkan permintaan lagu di chat box
         function displayRequest(song) {
             const chatBox = document.getElementById('chat-box');
             const requestText = document.createElement('div');
             requestText.textContent = `${song.artist} - ${song.title} - requested by "${song.username}"`;
-            chatBox.prepend(requestText);
+            chatBox.prepend(requestText); // Menambah permintaan lagu di atas
         }
 
+        // Skip lagu saat pengguna berhasil mengirimkan skip
         document.getElementById('skip-btn').addEventListener('click', () => {
             const pin = document.getElementById('skip-pin').value;
             if (pin === '1234') {
@@ -103,6 +114,7 @@
             }
         });
 
+        // Memperbarui queue setelah lagu di-skip
         socket.on('queue updated', (newQueue) => {
             queue = newQueue;
             if (queue.length > 0) {
